@@ -157,6 +157,20 @@ button:focus-visible {
   box-shadow: none;
 }
 
+/* ---------- Full-screen effects (compositor layers) ---------- */
+.fx {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  will-change: opacity;
+}
+.fx.vignette {
+  background: radial-gradient(ellipse at center, rgba(255, 30, 20, 0) 35%, rgba(255, 30, 20, 0.55) 100%);
+}
+.fx.flash {
+  background: #fff;
+}
+
 /* ---------- HUD ---------- */
 .hud {
   position: absolute;

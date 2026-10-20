@@ -13,6 +13,7 @@ import type { SkinDef } from "../progression/milestones";
 import type { Juice } from "../systems/juice";
 import { drawArtefact } from "./artefacts";
 import { Background } from "./background";
+import { SpriteCache } from "./sprites";
 import { circle, ellipse, poly, roundRect, seeded, shadow, star, text, type Ctx } from "./draw";
 
 export interface Scene {
@@ -26,10 +27,20 @@ export interface Scene {
   input: Input;
 }
 
-const GEM_COLORS = ["#5fe0a0", "#5fb0ff", "#ff5f7a"];
+
+/** Per-section render timings (ms, exponential average) for profiling via the debug API. */
+export const PERF: Record<string, number> = {};
+const mark = (name: string, t0: number): number => {
+  const t = performance.now();
+  PERF[name] = (PERF[name] ?? 0) * 0.9 + (t - t0) * 0.1;
+  return t;
+};
 
 export class Renderer {
   private readonly bg = new Background();
+  private readonly sprites = new SpriteCache();
+  private backdrop: HTMLCanvasElement | null = null;
+  private backdropKey = "";
   declare edgeArrow: (c: Ctx, wx: number, wy: number, color: string, label: string) => void;
   constructor(private readonly vp: Viewport) {}
 
@@ -54,21 +65,29 @@ export class Renderer {
     c.beginPath();
     c.rect(0, 0, WORLD, WORLD);
     c.clip();
+    let t0 = performance.now();
     const bgc = this.bg.get(layout, this.vp.worldPixelSize);
     c.drawImage(bgc, 0, 0, WORLD, WORLD);
+    t0 = mark("bg", t0);
     this.drawHazards(c, layout, s.time);
     this.drawGroundFire(c, run.dragon, s.time);
+    t0 = mark("hazards", t0);
     this.drawItems(c, layout, s.time);
+    t0 = mark("items", t0);
     for (const o of layout.obstacles) this.drawObstacle(c, o, layout.def.palette);
+    t0 = mark("obstacles", t0);
     if (run.dragon.state === "asleep" || run.dragon.state === "waking") this.drawSleepingDragon(c, run.dragon, layout.def.palette, s.time);
     this.drawExit(c, layout, run, s);
     this.drawThief(c, run.thief, s, run.dragon.state !== "asleep");
     if (run.dragon.state === "awake") this.drawAwakeDragon(c, run.dragon, layout.def.palette, s.time);
     this.drawFlame(c, run.dragon, s.time);
+    t0 = mark("actors", t0);
     s.particles.draw(c);
+    t0 = mark("particles", t0);
     s.popups.draw(c);
     c.restore();
     this.drawOverlay(c, s);
+    mark("overlay", t0);
   }
 
   /** Dark rock outside the lair (visible when the view is larger than the world). */
@@ -76,14 +95,37 @@ export class Renderer {
     this.vp.applyScreen();
     const w = this.vp.width;
     const h = this.vp.height;
+    // Only the strips the world does not cover need painting.
+    const tl = this.vp.worldToScreen(0, 0);
+    const br = this.vp.worldToScreen(WORLD, WORLD);
     c.fillStyle = color;
-    c.fillRect(0, 0, w, h);
-    const g = c.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.2, w / 2, h / 2, Math.max(w, h) * 0.8);
-    g.addColorStop(0, "rgba(255,255,255,0.05)");
-    g.addColorStop(1, "rgba(0,0,0,0.45)");
-    c.fillStyle = g;
-    c.fillRect(0, 0, w, h);
+    if (tl.x > 0) c.fillRect(0, 0, Math.ceil(tl.x), h);
+    if (br.x < w) c.fillRect(Math.floor(br.x), 0, w - Math.floor(br.x), h);
+    if (tl.y > 0) c.fillRect(0, 0, w, Math.ceil(tl.y));
+    if (br.y < h) c.fillRect(0, Math.floor(br.y), w, h - Math.floor(br.y));
     void t;
+    if (tl.x <= 0 && tl.y <= 0 && br.x >= w && br.y >= h) return;
+    const key = `${w}x${h}:${color}`;
+    if (!this.backdrop || this.backdropKey !== key) {
+      this.backdropKey = key;
+      const cv = this.backdrop ?? document.createElement("canvas");
+      cv.width = Math.max(2, Math.round(w / 4));
+      cv.height = Math.max(2, Math.round(h / 4));
+      const b = cv.getContext("2d")!;
+      b.fillStyle = color;
+      b.fillRect(0, 0, cv.width, cv.height);
+      const g = b.createRadialGradient(cv.width / 2, cv.height / 2, Math.min(cv.width, cv.height) * 0.2, cv.width / 2, cv.height / 2, Math.max(cv.width, cv.height) * 0.8);
+      g.addColorStop(0, "rgba(255,255,255,0.05)");
+      g.addColorStop(1, "rgba(0,0,0,0.45)");
+      b.fillStyle = g;
+      b.fillRect(0, 0, cv.width, cv.height);
+      this.backdrop = cv;
+    }
+    // Soft lighting over the strips (skip when the world fills the screen).
+    c.globalAlpha = 0.9;
+    if (tl.x > 0) c.drawImage(this.backdrop, 0, 0, tl.x / 4, h / 4, 0, 0, tl.x, h);
+    if (br.x < w) c.drawImage(this.backdrop, br.x / 4, 0, (w - br.x) / 4, h / 4, br.x, 0, w - br.x, h);
+    c.globalAlpha = 1;
   }
 
   // --- hazards ---------------------------------------------------------------------------
@@ -147,31 +189,30 @@ export class Renderer {
 
   // --- loot --------------------------------------------------------------------------------
   private drawItems(c: Ctx, layout: LairLayout, t: number): void {
+    const sp = this.sprites;
+    sp.ensure(this.vp.scale * this.vp.dpr);
+    const vis = this.vp.visible();
+    const x0 = vis.x - 40;
+    const y0 = vis.y - 40;
+    const x1 = vis.x + vis.w + 40;
+    const y1 = vis.y + vis.h + 40;
+    const blit = (s: { canvas: HTMLCanvasElement; ox: number; oy: number; w: number; h: number }, x: number, y: number): void => {
+      c.drawImage(s.canvas, x + s.ox, y + s.oy, s.w, s.h);
+    };
     for (const it of layout.items) {
       if (it.taken) continue;
+      if (it.x < x0 || it.x > x1 || it.y < y0 || it.y > y1) continue;
       const bob = Math.sin(it.phase + t * 2) * 2;
       switch (it.kind) {
         case "coin":
-          shadow(c, it.x, it.y + 4, it.r, it.r * 0.5, 0.25);
-          circle(c, it.x, it.y - bob * 0.5, it.r, "#f3c640", "#b8871f", 2);
-          circle(c, it.x - it.r * 0.25, it.y - bob * 0.5 - it.r * 0.25, it.r * 0.35, "#ffe88a");
+          blit(sp.coin, it.x, it.y - bob * 0.5);
           break;
         case "bigcoin":
-          shadow(c, it.x, it.y + 5, it.r * 1.1, it.r * 0.5, 0.25);
-          c.save();
-          c.translate(it.x, it.y - bob * 0.4);
-          c.rotate(it.phase * 0.3);
-          roundRect(c, -13, -8, 26, 16, 4, "#f7cf4a", "#b8871f", 2.5);
-          roundRect(c, -9, -5, 18, 4, 2, "#fff0b0");
-          c.restore();
+          blit(sp.bigcoin, it.x, it.y - bob * 0.4);
           break;
         case "gem": {
-          shadow(c, it.x, it.y + 5, it.r, it.r * 0.5, 0.25);
-          const col = GEM_COLORS[it.tier];
-          const y = it.y - bob;
-          poly(c, [it.x - 11, y - 3, it.x - 6, y - 10, it.x + 6, y - 10, it.x + 11, y - 3, it.x, y + 11], col, "rgba(0,0,0,0.45)", 2);
-          poly(c, [it.x - 6, y - 10, it.x, y - 3, it.x + 6, y - 10], "rgba(255,255,255,0.5)");
-          if (Math.sin(it.phase * 3 + t * 4) > 0.92) star(c, it.x + 7, y - 9, 7, "#ffffff", 4);
+          blit(sp.gems[it.tier], it.x, it.y - bob);
+          if (Math.sin(it.phase * 3 + t * 4) > 0.92) star(c, it.x + 7, it.y - bob - 9, 7, "#ffffff", 4);
           break;
         }
         case "artefact": {
@@ -628,20 +669,9 @@ export class Renderer {
     const w = this.vp.width;
     const h = this.vp.height;
     const j = s.juice;
-    if (j.vignette > 0.01) {
-      const pulse = 0.75 + 0.25 * Math.sin(s.time * 8);
-      const g = c.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.3, w / 2, h / 2, Math.max(w, h) * 0.75);
-      g.addColorStop(0, "rgba(255,30,20,0)");
-      g.addColorStop(1, `rgba(255,30,20,${0.5 * j.vignette * pulse})`);
-      c.fillStyle = g;
-      c.fillRect(0, 0, w, h);
-    }
-    if (j.flashAlpha > 0.01) {
-      c.globalAlpha = j.flashAlpha;
-      c.fillStyle = j.flashColor;
-      c.fillRect(0, 0, w, h);
-      c.globalAlpha = 1;
-    }
+    void j;
+    void w;
+    void h;
     // Off-screen indicators: the exit (when it matters) and the awake dragon.
     const run = s.run;
     if (run) {

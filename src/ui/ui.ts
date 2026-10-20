@@ -155,6 +155,9 @@ export class Ui {
   private readyEl: HTMLElement;
   private screens: Record<string, HTMLElement> = {};
   private toasts: HTMLElement;
+  private fxVignette!: HTMLElement;
+  private fxFlash!: HTMLElement;
+  private fxFlashColor = "";
   private hintTimer = 0;
   private lastHud: Partial<HudState> = {};
   private faceKey = "";
@@ -255,6 +258,22 @@ export class Ui {
     this.screens.ad.innerHTML = `<div class="ad-note">Ad playing<small>The heist continues right after.</small></div>`;
     this.toasts = el(`<div class="toasts"></div>`);
     root.appendChild(this.toasts);
+    this.fxVignette = el(`<div class="fx vignette"></div>`);
+    this.fxFlash = el(`<div class="fx flash"></div>`);
+    root.insertBefore(this.fxFlash, this.hud);
+    root.insertBefore(this.fxVignette, this.hud);
+  }
+
+  /** Full-screen effects live in cheap compositor layers instead of canvas blits. */
+  setFx(vignette: number, flashAlpha: number, flashColor: string): void {
+    const v = vignette < 0.01 ? "0" : vignette.toFixed(2);
+    if (this.fxVignette.style.opacity !== v) this.fxVignette.style.opacity = v;
+    const f = flashAlpha < 0.01 ? "0" : flashAlpha.toFixed(2);
+    if (this.fxFlash.style.opacity !== f) this.fxFlash.style.opacity = f;
+    if (flashAlpha >= 0.01 && this.fxFlashColor !== flashColor) {
+      this.fxFlashColor = flashColor;
+      this.fxFlash.style.background = flashColor;
+    }
   }
 
   // --- HUD ---------------------------------------------------------------------------------

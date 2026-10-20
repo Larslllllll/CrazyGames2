@@ -42,6 +42,8 @@ const zoneOf: Zone = {
 
 export interface GenOptions {
   charmMult: number;
+  /** Highest rarity allowed in this hoard (the first heists stay predictable). */
+  maxRarity?: number;
   /** Artefacts already in the museum get a small penalty so new ones show up a bit more often. */
   museum: string[];
 }
@@ -137,6 +139,7 @@ export const generateLair = (def: LairDef, seed: number, daily: boolean, opts: G
   // Artefacts first: rarer ones sit closer to the head.
   const pool = artefactsOf(def.id);
   const weights = pool.map((a) => {
+    if (a.rarity > (opts.maxRarity ?? 4)) return 0;
     let w = RARITY_WEIGHTS[a.rarity];
     if (a.rarity >= 2) w *= opts.charmMult;
     if (opts.museum.includes(a.id)) w *= 0.7;

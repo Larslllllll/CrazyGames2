@@ -19,7 +19,7 @@ import { LAIRS, lairById, type LairDef } from "./progression/lairs";
 import { checkMilestones, completionPercent, MILESTONES, SKINS, skinById } from "./progression/milestones";
 import { defaultProfile, parseProfile, PROFILE_KEY, type Profile } from "./progression/profile";
 import { bagCapacity, charmMult, lullabyAmount, magnetRadius, speedMult, stepNoiseMult, upgradeById, upgradeCost, UPGRADES, type UpgradeId } from "./progression/upgrades";
-import { Renderer } from "./render/renderer";
+import { PERF, Renderer } from "./render/renderer";
 import { CrazySdk, type SdkUser } from "./sdk/crazygames";
 import { Juice } from "./systems/juice";
 import { Ui, type ResultView } from "./ui/ui";
@@ -62,6 +62,8 @@ export class Game {
   private showExitHint = true;
   private resultTimer = 0;
   private cameraSnap = true;
+  lastFrameMs = 0;
+  lastUpdateMs = 0;
   private sessionHints = new Set<string>();
   /** Test hook: when set, replaces the player's input (never on crazygames.com). */
   inputOverride: MoveInput | null = null;
@@ -149,6 +151,7 @@ export class Game {
     const layout: LairLayout = generateLair(def, this.layoutSeed, daily, {
       charmMult: charmMult(this.profile.upgrades.charm),
       museum: this.profile.museum,
+      maxRarity: this.profile.runs < 3 ? 2 : 4,
     });
     this.run = new Run(layout, this.stats(), this.profile.upgrades.lullaby, lullabyAmount(this.profile.upgrades.lullaby));
     this.wire(this.run);
@@ -697,7 +700,13 @@ export class Game {
   private update(dt: number): void {
     const run = this.run;
     if (!run) return;
+    const tu0 = performance.now();
     this.sfx.tick(dt);
+    this.updateInner(run, dt);
+    this.lastUpdateMs = this.lastUpdateMs * 0.9 + (performance.now() - tu0) * 0.1;
+  }
+
+  private updateInner(run: Run, dt: number): void {
     if (this.input.consume("p") || this.input.consume("P")) {
       if (this.paused && this.ui.current === "pause") this.resume();
       else this.pause();
@@ -739,6 +748,7 @@ export class Game {
   private render(frame: number): void {
     const run = this.run;
     if (!run) return;
+    const tr0 = performance.now();
     this.juice.update(frame, Math.min(this.vp.view.w, this.vp.view.h) * 0.012);
     this.loop.timeScale = this.juice.timeScale;
     // Camera: overview of the whole lair while waiting, follow the thief during the heist.
@@ -781,6 +791,9 @@ export class Game {
       dragonColor: run.layout.def.palette.dragon,
       daily: this.daily,
     });
+    const pulse = 0.75 + 0.25 * Math.sin(this.time * 8);
+    this.ui.setFx(this.juice.vignette * pulse, this.juice.flashAlpha, this.juice.flashColor);
+    this.lastFrameMs = this.lastFrameMs * 0.9 + (performance.now() - tr0) * 0.1;
   }
 
   // --- debug / QA hooks ------------------------------------------------------------------------
@@ -819,6 +832,16 @@ export class Game {
       },
       sdkLog: () => self.sdk.log.slice(),
       env: () => self.sdk.env,
+      perf: () => ({ ...PERF, particles: self.particles.count, frameMs: self.lastFrameMs, updateMs: self.lastUpdateMs }),
+      audio: () => ({
+        ctx: !!self.audio.ctx,
+        state: self.audio.ctx?.state ?? "none",
+        platformMuted: self.audio.platformMuted,
+        adMuted: self.audio.adMuted,
+        masterGain: self.audio.master?.gain.value ?? -1,
+        music: self.music.mode,
+        tension: self.music.tension,
+      }),
       dist,
       // QA mutators: never available on crazygames.com.
       qa:

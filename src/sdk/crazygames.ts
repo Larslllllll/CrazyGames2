@@ -149,7 +149,12 @@ export class CrazySdk {
     this.call("gameplayStop", (s) => s.game.gameplayStop());
   }
 
+  private lastHappy = -1e9;
+
+  /** Celebrations are rate-limited by the SDK (1/s); coalesce bursts (new record + legendary at once). */
   happytime(): void {
+    if (performance.now() - this.lastHappy < 1100) return;
+    this.lastHappy = performance.now();
     this.call("happytime", (s) => s.game.happytime());
   }
 
