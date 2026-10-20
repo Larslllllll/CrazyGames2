@@ -173,8 +173,9 @@ export class Run {
     }
 
     // Escape through the tunnel.
+    // Escape through the tunnel: the thief has to walk into the tunnel mouth itself.
     const ex = this.layout.exit;
-    if (dist(t.x, t.y, ex.x, ex.y) < ex.r - 8 && (t.bagValue > 0 || d.state !== "asleep")) {
+    if (Math.abs(t.x - ex.x) < 44 && t.y > ex.y - 12 && (t.bagValue > 0 || d.state !== "asleep")) {
       this.end("escaped", null);
     }
   }

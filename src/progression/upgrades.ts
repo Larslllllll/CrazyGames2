@@ -72,7 +72,7 @@ export const upgradeById = (id: UpgradeId): UpgradeDef => UPGRADES.find((u) => u
 export const upgradeCost = (def: UpgradeDef, level: number): number =>
   Math.round(def.baseCost * Math.pow(def.growth, level));
 
-export const bagCapacity = (l: number): number => 24 + 10 * l;
+export const bagCapacity = (l: number): number => 40 + 12 * l;
 export const stepNoiseMult = (l: number): number => 1 - 0.12 * l;
 export const speedMult = (l: number): number => 1 + 0.08 * l;
 export const magnetRadius = (l: number): number => 34 + 12 * l;

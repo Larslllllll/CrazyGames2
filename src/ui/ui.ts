@@ -371,12 +371,12 @@ export class Ui {
         ${r.daily ? `<div class="record" style="color:var(--gold2)">DAILY HEIST</div>` : ""}
         <div class="reveals">${reveals}</div>
         <div class="stack">
-          ${r.escaped ? `<div class="stat"><span>Loot (${r.coins} coins, ${r.gems} gems, ${r.artefacts.length} artefacts)</span><b>${fmtGold(r.baseHaul)}</b></div>` : `<div class="stat"><span>Lost loot</span><b style="text-decoration:line-through;color:var(--danger)">${fmtGold(r.lostHaul)}</b></div>`}
+          ${r.escaped ? `<div class="stat"><span>Loot · ${r.coins} coins · ${r.gems} gems · ${r.artefacts.length} artefact${r.artefacts.length === 1 ? "" : "s"}</span><b>${fmtGold(r.baseHaul)}</b></div>` : `<div class="stat"><span>Lost loot</span><b style="text-decoration:line-through;color:var(--danger)">${fmtGold(r.lostHaul)}</b></div>`}
           ${r.bonus > 0 ? `<div class="stat bonus"><span>Close call bonus +20%</span><b>+${fmtGold(r.bonus)}</b></div>` : ""}
           ${ms}
           <div class="stat total"><span>Banked</span><b>${fmtGold(r.haul)}</b></div>
         </div>
-        <div class="actions">${actions}<div class="row center"><button class="btn ghost" data-shop><span class="ico">${ICONS.shop}</span>Shop</button><button class="btn ghost" data-home>Lair</button></div></div>
+        <div class="actions">${actions}<div class="row center"><button class="btn ghost" data-shop><span class="ico">${ICONS.shop}</span>Shop</button><button class="btn ghost" data-museum><span class="ico">${ICONS.trophy}</span>Museum</button></div></div>
       </div>`,
     );
     for (const a of r.artefacts) {
@@ -392,9 +392,9 @@ export class Ui {
       this.cb.uiClick();
       this.cb.openShop();
     });
-    s.querySelector("[data-home]")?.addEventListener("click", () => {
+    s.querySelector("[data-museum]")?.addEventListener("click", () => {
       this.cb.uiClick();
-      this.cb.home();
+      this.cb.openMuseum();
     });
     const rb = s.querySelector<HTMLButtonElement>("[data-reward]");
     rb?.addEventListener("click", () => {

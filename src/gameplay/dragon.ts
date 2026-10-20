@@ -62,6 +62,7 @@ export class Dragon {
   twitch = 0;
   private raw = 0;
   private snoreFired = false;
+  private wakePending = false;
 
   constructor(private readonly layout: LairLayout) {
     this.x = layout.dragon.x;
@@ -74,12 +75,16 @@ export class Dragon {
 
   /** Footstep noise is masked while the dragon snores loudly. */
   get snoreMask(): number {
-    return this.state === "asleep" && this.snoring ? 0.3 : 1;
+    return this.state === "asleep" && this.snoring ? 0.35 : 1;
   }
 
   addNoise(n: number): void {
     if (this.state !== "asleep") return;
-    this.raw = Math.min(100, this.raw + n);
+    this.raw += n;
+    if (this.raw >= 100) {
+      this.raw = 100;
+      this.wakePending = true;
+    }
     if (n > 2.5) this.twitch = Math.max(this.twitch, Math.min(1, n / 10));
   }
 
@@ -106,7 +111,7 @@ export class Dragon {
       // Greed and time make the sleep lighter.
       this.floor = clamp(def.greedFloor * takenFraction + Math.max(0, this.t - def.graceTime) * def.sleepLighten, 0, 100);
       const decay = thief.speedFrac < 0.12 ? 3.2 : 1.1;
-      this.raw = Math.max(this.floor, this.raw - decay * dt);
+      if (!this.wakePending) this.raw = Math.max(this.floor, this.raw - decay * dt);
       this.meter = this.raw;
       const stage = this.meter >= 80 ? 2 : this.meter >= 50 ? 1 : 0;
       if (stage !== this.stage) {
@@ -116,7 +121,7 @@ export class Dragon {
       const base = stage === 0 ? 0 : stage === 1 ? 0.42 : 0.68;
       const pulse = stage === 2 ? 0.12 * Math.sin(this.t * 9) : 0;
       this.eye = clamp(base + pulse + this.twitch * 0.35, 0, 0.95);
-      if (this.meter >= 100) {
+      if (this.wakePending || this.meter >= 100) {
         this.state = "waking";
         this.wakeTimer = 0.9;
         this.eye = 1;

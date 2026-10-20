@@ -30,6 +30,7 @@ const GEM_COLORS = ["#5fe0a0", "#5fb0ff", "#ff5f7a"];
 
 export class Renderer {
   private readonly bg = new Background();
+  declare edgeArrow: (c: Ctx, wx: number, wy: number, color: string, label: string) => void;
   constructor(private readonly vp: Viewport) {}
 
   draw(s: Scene): void {
@@ -41,13 +42,19 @@ export class Renderer {
     if (!run) return;
     const layout = run.layout;
     const j = s.juice;
+    const v = this.vp.view;
+    this.drawBackdrop(c, layout.def.palette.wallDark, s.time);
     c.save();
+    // Clip to the view area, then draw the world through the camera.
+    this.vp.applyScreen();
+    c.beginPath();
+    c.rect(v.x, v.y, v.w, v.h);
+    c.clip();
     this.vp.applyWorld(j.shakeX, j.shakeY, j.zoom);
-    // Clip to the lair square.
     c.beginPath();
     c.rect(0, 0, WORLD, WORLD);
     c.clip();
-    const bgc = this.bg.get(layout, this.vp.world.w * this.vp.dpr);
+    const bgc = this.bg.get(layout, this.vp.worldPixelSize);
     c.drawImage(bgc, 0, 0, WORLD, WORLD);
     this.drawHazards(c, layout, s.time);
     this.drawGroundFire(c, run.dragon, s.time);
@@ -62,6 +69,21 @@ export class Renderer {
     s.popups.draw(c);
     c.restore();
     this.drawOverlay(c, s);
+  }
+
+  /** Dark rock outside the lair (visible when the view is larger than the world). */
+  private drawBackdrop(c: Ctx, color: string, t: number): void {
+    this.vp.applyScreen();
+    const w = this.vp.width;
+    const h = this.vp.height;
+    c.fillStyle = color;
+    c.fillRect(0, 0, w, h);
+    const g = c.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.2, w / 2, h / 2, Math.max(w, h) * 0.8);
+    g.addColorStop(0, "rgba(255,255,255,0.05)");
+    g.addColorStop(1, "rgba(0,0,0,0.45)");
+    c.fillStyle = g;
+    c.fillRect(0, 0, w, h);
+    void t;
   }
 
   // --- hazards ---------------------------------------------------------------------------
@@ -499,7 +521,7 @@ export class Renderer {
     shadow(c, th.x, th.y + 12, 18, 8, 0.3);
     c.save();
     c.translate(th.x, th.y + bobY);
-    c.scale(1 / Math.sqrt(th.squash), th.squash * sneak);
+    c.scale((1.12 / Math.sqrt(th.squash)) * 1, 1.12 * th.squash * sneak);
     // Sack (behind, opposite the facing direction).
     const bx = -Math.cos(th.facing) * 15;
     const by = -Math.sin(th.facing) * 15;
@@ -578,6 +600,16 @@ export class Renderer {
       c.fillRect(0, 0, w, h);
       c.globalAlpha = 1;
     }
+    // Off-screen indicators: the exit (when it matters) and the awake dragon.
+    const run = s.run;
+    if (run) {
+      const vis = this.vp.visible();
+      const inside = (x: number, y: number): boolean => x > vis.x + 20 && x < vis.x + vis.w - 20 && y > vis.y + 20 && y < vis.y + vis.h - 20;
+      const awake = run.dragon.state === "awake";
+      const ex = run.layout.exit;
+      if ((s.showExitHint || awake) && !inside(ex.x, ex.y - 30)) this.edgeArrow(c, ex.x, ex.y - 30, awake ? "#ff8a5a" : "#ffe066", "EXIT");
+      if (awake && !inside(run.dragon.x, run.dragon.y)) this.edgeArrow(c, run.dragon.x, run.dragon.y, "#ff4a2a", "!");
+    }
     // Virtual joystick.
     const inp = s.input;
     if (inp.dragging && inp.touchDevice) {
@@ -596,5 +628,30 @@ export class Renderer {
 }
 
 export const lerpColor = (a: number, b: number, t: number): number => Math.round(lerp(a, b, t));
+
+/** Draws an arrow on the edge of the view pointing at a world position (screen space). */
+function edgeArrowImpl(this: Renderer, c: Ctx, wx: number, wy: number, color: string, label: string): void {
+  const vp = (this as unknown as { vp: Viewport }).vp;
+  const v = vp.view;
+  const p = vp.worldToScreen(wx, wy);
+  const cx = v.x + v.w / 2;
+  const cy = v.y + v.h / 2;
+  const dx = p.x - cx;
+  const dy = p.y - cy;
+  const m = 34;
+  const kx = dx !== 0 ? (v.w / 2 - m) / Math.abs(dx) : Infinity;
+  const ky = dy !== 0 ? (v.h / 2 - m) / Math.abs(dy) : Infinity;
+  const k = Math.min(kx, ky, 1);
+  const x = cx + dx * k;
+  const y = cy + dy * k;
+  const a = Math.atan2(dy, dx);
+  c.save();
+  c.translate(x, y);
+  c.rotate(a);
+  poly(c, [16, 0, -8, -12, -4, 0, -8, 12], color, "rgba(0,0,0,0.55)", 3);
+  c.restore();
+  text(c, label, x - Math.cos(a) * 26, y - Math.sin(a) * 26, 15, "#ffffff", { stroke: "rgba(0,0,0,0.6)" });
+}
+(Renderer.prototype as unknown as { edgeArrow: typeof edgeArrowImpl }).edgeArrow = edgeArrowImpl;
 export const clampPx = clamp;
 export type { Item, Hazard };

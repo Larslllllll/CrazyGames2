@@ -7,7 +7,7 @@ import type { Circle, Hazard, Item, LairLayout, Obstacle } from "./types";
 
 export const DRAGON_HEAD = { x: 500, y: 335, r: 82 };
 export const EXIT = { x: 500, y: 952, r: 50 };
-export const SPAWN = { x: 500, y: 892 };
+export const SPAWN = { x: 500, y: 876 };
 
 /** Collision circles of the sleeping dragon (head, neck, body, shoulders, tail). */
 export const dragonCircles = (): Circle[] => [
@@ -161,7 +161,7 @@ export const generateLair = (def: LairDef, seed: number, daily: boolean, opts: G
       if (!free(x, y, ART_R + 14) || !lavaFree(x, y, ART_R + 20)) continue;
       if (zoneOf.of(x, y) !== wantZone) continue;
       if (items.some((it) => dist(x, y, it.x, it.y) < 110)) continue;
-      push("artefact", x, y, ART_R, RARITY_BASE_VALUE[a.rarity], 8, 8, a.rarity, a);
+      push("artefact", x, y, ART_R, RARITY_BASE_VALUE[a.rarity], 8, 16 + 6 * a.rarity, a.rarity, a);
       break;
     }
   }
@@ -178,7 +178,7 @@ export const generateLair = (def: LairDef, seed: number, daily: boolean, opts: G
     if (!rng.chance(accept)) continue;
     if (items.some((it) => dist(x, y, it.x, it.y) < (it.kind === "artefact" ? 50 : 40))) continue;
     const tier = z === 0 ? (rng.chance(0.5) ? 2 : 1) : z === 1 ? (rng.chance(0.35) ? 1 : 0) : 0;
-    push("gem", x, y, GEM_R, [12, 20, 35][tier], 3, 3.5, tier);
+    push("gem", x, y, GEM_R, [12, 20, 35][tier], 3, 6, tier);
     gems++;
   }
 
@@ -207,10 +207,10 @@ export const generateLair = (def: LairDef, seed: number, daily: boolean, opts: G
     if (!free(x, y, r + 2) || !lavaFree(x, y, r + 14)) continue;
     if (items.some((it) => dist(x, y, it.x, it.y) < r + it.r + 4)) continue;
     if (big) {
-      push("bigcoin", x, y, BIG_R, 5, 2, 2);
+      push("bigcoin", x, y, BIG_R, 5, 2, 3);
       bigs++;
     } else {
-      push("coin", x, y, COIN_R, c.z === 0 ? 3 : c.z === 1 ? 2 : 1, 1, 1.2);
+      push("coin", x, y, COIN_R, c.z === 0 ? 3 : c.z === 1 ? 2 : 1, 1, 1.6);
       coins++;
     }
   }

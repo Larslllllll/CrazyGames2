@@ -2,8 +2,8 @@
 export type Rarity = 0 | 1 | 2 | 3 | 4;
 export const RARITY_NAMES = ["Common", "Uncommon", "Rare", "Epic", "Legendary"] as const;
 export const RARITY_COLORS = ["#b9c3c6", "#7fe08a", "#5fb0ff", "#c77dff", "#ffb13b"] as const;
-export const RARITY_BASE_VALUE = [60, 150, 400, 1000, 3000] as const;
-export const RARITY_WEIGHTS = [50, 28, 14, 6, 2] as const;
+export const RARITY_BASE_VALUE = [40, 90, 220, 600, 1500] as const;
+export const RARITY_WEIGHTS = [62, 25, 9, 3, 1] as const;
 
 export type ArtefactShape =
   | "goblet"

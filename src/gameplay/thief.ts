@@ -123,8 +123,10 @@ export class Thief {
     if (speed > 8) this.facing = Math.atan2(this.vy, this.vx);
     this.bob += dt * (6 + 16 * this.speedFrac);
     if (this.moving) {
-      // Footsteps: noise ∝ speed² (sneaking is nearly silent), masked by snoring.
-      const noise = 11 * this.speedFrac * this.speedFrac * this.stats.stepNoise * snoreMask * layout.def.noiseMult * dt;
+      // Footsteps: noise ∝ (how hard you push)², a heavy bag clinks louder, snoring masks it.
+      const effort = clamp(speed / maxSpeed, 0, 1.2);
+      const load = 1 + 0.6 * clamp(this.bagWeight / this.stats.capacity, 0, 1);
+      const noise = 14 * effort * effort * load * this.stats.stepNoise * snoreMask * layout.def.noiseMult * dt;
       ev.onNoise(noise);
       this.stepTimer -= dt * (0.6 + this.speedFrac);
       if (this.stepTimer <= 0) {

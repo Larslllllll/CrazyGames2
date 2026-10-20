@@ -19,6 +19,7 @@ const RUNS = Number(opt("runs", 3));
 const SHOTS = args.includes("--shots");
 const MOBILE = args.includes("--mobile");
 const URL = opt("url", "http://localhost:4173/");
+const BOT = opt("bot", "greedy"); // greedy | reckless | sneaky
 const OUT = "docs/test-evidence";
 mkdirSync(OUT, { recursive: true });
 
@@ -62,9 +63,19 @@ for (let run = 0; run < RUNS; run++) {
   let s = await state();
   const start = Date.now();
   let shotTaken = false;
+  let awakeShot = false;
+  let lastLog = -1;
   while (s && (s.phase === "ready" || s.phase === "play") && Date.now() - start < 120000) {
     const th = s.thief;
-    const leave = s.dragon.meter > 72 || s.thief.bagWeight >= s.thief.capacity - 1 || s.dragon.state !== "asleep" || s.time > 70;
+    const leaveMeter = BOT === "reckless" ? 97 : BOT === "sneaky" ? 55 : 72;
+    const leave =
+      BOT === "kamikaze"
+        ? s.dragon.state !== "asleep" || s.time > 90
+        : s.dragon.meter > leaveMeter || s.thief.bagWeight >= s.thief.capacity - 1 || s.dragon.state !== "asleep" || s.time > 70;
+    if (BOT === "kamikaze" && s.phase === "play" && Math.floor(s.time * 2) !== lastLog) {
+      lastLog = Math.floor(s.time * 2);
+      if (lastLog % 4 === 0) console.log(`  t=${s.time.toFixed(1)} meter=${s.dragon.meter.toFixed(0)} floor=${s.dragon.floor.toFixed(0)} bag=${s.thief.bagWeight}/${s.thief.capacity} state=${s.dragon.state}`);
+    }
     let tx = s.exit.x;
     let ty = s.exit.y;
     if (!leave) {
@@ -72,7 +83,7 @@ for (let run = 0; run < RUNS; run++) {
       let bd = 1e9;
       for (const it of s.items) {
         if (it.weight + th.bagWeight > th.capacity) continue;
-        const d = Math.hypot(it.x - th.x, it.y - th.y) - it.value * 0.6;
+        const d = Math.hypot(it.x - th.x, it.y - th.y) - it.value * (BOT === "reckless" ? 1.2 : 0.3);
         if (d < bd) {
           bd = d;
           best = it;
@@ -81,32 +92,38 @@ for (let run = 0; run < RUNS; run++) {
       if (best) {
         tx = best.x;
         ty = best.y;
+      } else if (BOT === "kamikaze" && s.items.length) {
+        const it = s.items[Math.floor(Math.random() * s.items.length)];
+        tx = it.x;
+        ty = it.y;
       }
     }
     const dx = tx - th.x;
     const dy = ty - th.y;
     const d = Math.hypot(dx, dy) || 1;
     // Sneak (slow drags) while the dragon stirs, run when awake or leaving.
-    const mag = s.dragon.state !== "asleep" ? 1 : s.dragon.meter > 45 && !leave ? 0.38 : 0.8;
+    const mag =
+      s.dragon.state !== "asleep" || BOT === "reckless" || BOT === "kamikaze" ? 1 : BOT === "sneaky" ? (s.dragon.meter > 25 ? 0.36 : 0.6) : s.dragon.meter > 45 && !leave ? 0.38 : 0.85;
     await setInput((dx / d) * mag, (dy / d) * mag);
     await page.waitForTimeout(60);
     s = await state();
     if (SHOTS && !shotTaken && s && s.phase === "play" && s.time > 6) {
-      await page.screenshot({ path: `${OUT}/play-run${run + 1}${MOBILE ? "-mobile" : ""}.png` });
+      await page.screenshot({ path: `${OUT}/play-${BOT}-run${run + 1}${MOBILE ? "-mobile" : ""}.png` });
       shotTaken = true;
     }
-    if (SHOTS && s && s.dragon.state === "awake" && !s.__awakeShot) {
-      await page.screenshot({ path: `${OUT}/awake-run${run + 1}${MOBILE ? "-mobile" : ""}.png` });
-      s.__awakeShot = true;
+    if (SHOTS && !awakeShot && s && s.dragon.state === "awake" && s.time > 0) {
+      await page.waitForTimeout(700);
+      await page.screenshot({ path: `${OUT}/awake-${BOT}-run${run + 1}${MOBILE ? "-mobile" : ""}.png` });
+      awakeShot = true;
     }
   }
   await setInput(0, 0);
   await page.waitForTimeout(1500);
   s = await state();
   const r = s?.result;
-  results.push({ run: run + 1, phase: s?.phase, haul: r?.haul, time: r?.time?.toFixed(1), woke: r?.woke, cause: r?.cause, taken: r ? (r.takenFraction * 100).toFixed(0) + "%" : "", fps: s?.fps?.toFixed(0), gold: s?.profile.gold });
+  results.push({ run: run + 1, bot: BOT, phase: s?.phase, haul: r?.haul, time: r?.time?.toFixed(1), woke: r?.woke, cause: r?.cause, taken: r ? (r.takenFraction * 100).toFixed(0) + "%" : "", fps: s?.fps?.toFixed(0), gold: s?.profile.gold });
   console.log(JSON.stringify(results[results.length - 1]));
-  if (SHOTS && run === 0) await page.screenshot({ path: `${OUT}/result-run1${MOBILE ? "-mobile" : ""}.png` });
+  if (SHOTS && run === 0) await page.screenshot({ path: `${OUT}/result-${BOT}-run1${MOBILE ? "-mobile" : ""}.png` });
   // Continue: result screen → Next heist (handles rewarded offers by skipping them).
   const btn = await page.waitForSelector("[data-next]", { timeout: 8000 }).catch(() => null);
   if (!btn) break;

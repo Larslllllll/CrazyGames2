@@ -61,6 +61,7 @@ export class Game {
   private adblock = false;
   private showExitHint = true;
   private resultTimer = 0;
+  private cameraSnap = true;
   private sessionHints = new Set<string>();
   /** Test hook: when set, replaces the player's input (never on crazygames.com). */
   inputOverride: MoveInput | null = null;
@@ -160,6 +161,7 @@ export class Game {
     this.paused = false;
     this.offerThisBreak = false;
     this.showExitHint = true;
+    this.cameraSnap = true;
     this.ui.closeAll();
     this.ui.setHudVisible(true);
     this.music.start();
@@ -736,8 +738,19 @@ export class Game {
   private render(frame: number): void {
     const run = this.run;
     if (!run) return;
-    this.juice.update(frame, this.vp.world.w * 0.012);
+    this.juice.update(frame, Math.min(this.vp.view.w, this.vp.view.h) * 0.012);
     this.loop.timeScale = this.juice.timeScale;
+    // Camera: overview of the whole lair while waiting, follow the thief during the heist.
+    const playing = run.phase === "play" || run.phase === "caught" || run.phase === "escaped";
+    const vp = this.vp;
+    if (playing) {
+      const th = run.thief;
+      const zoom = vp.playZoom * (run.dragon.state === "awake" ? 0.88 : 1);
+      vp.follow(th.x + th.vx * 0.22, th.y + th.vy * 0.22, zoom, frame, this.cameraSnap);
+    } else {
+      vp.follow(500, 500, 1, frame, this.cameraSnap);
+    }
+    this.cameraSnap = false;
     this.renderer.draw({
       run,
       particles: this.particles,
