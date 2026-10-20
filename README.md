@@ -9,7 +9,7 @@ roars, chases you across the cave and breathes fire; reach the tunnel and you ke
 - Lands directly in gameplay: the first screen *is* the lair, the first movement starts the heist.
 - 30–90 second heists, one-tap retry, 60 fps Canvas 2D, ~160 KB download, no external assets.
 - Six upgrades, four lairs with four dragons (bones, ice, lava, pressure plates), 32 artefacts in five rarity tiers,
-  a Hoard Museum, six thief skins, 18 milestones, a Daily Heist shared by all players.
+  a Hoard Museum, six thief skins, 17 milestones, a Daily Heist shared by all players.
 - Desktop + mobile (both orientations, virtual joystick, safe-area aware), keyboard layouts WASD/ZQSD/arrows.
 - Official CrazyGames SDK v3: loading + gameplay events, midgame ads at the result screen, two optional rewarded
   placements (Keep loot after being caught, Double haul), cloud save through the Data module, platform mute,

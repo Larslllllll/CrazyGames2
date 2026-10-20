@@ -99,7 +99,7 @@ close-call escape → result): `marketing/preview-landscape.mp4` (1920×1080) an
 - A Wake meter driven by footsteps, loot clinks, bag weight, greed and time; snoring masks your steps
 - Dragon wake-up with telegraphed fire breath, burning ground and a chase that rocks block
 - Six upgrades, four lairs with four dragons and gimmicks (bones, ice, lava, pressure plates)
-- 32 artefacts in five rarity tiers, Hoard Museum, six thief skins, 18 milestones
+- 32 artefacts in five rarity tiers, Hoard Museum, six thief skins, 17 milestones
 - Daily Heist with a seeded lair shared by all players
 - Close Call bonus, best haul per lair (leaderboard-ready single metric)
 - CrazyGames SDK v3: cloud save, gameplay events, midgame + rewarded ads (Keep loot, Double haul), platform mute

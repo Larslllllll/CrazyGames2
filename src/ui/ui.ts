@@ -403,7 +403,7 @@ export class Ui {
     );
     for (const a of r.artefacts) {
       const holder = s.querySelector(`[data-art="${a.def.id}"]`);
-      holder?.insertBefore(artefactIcon(a.def, 56), holder.firstChild?.nextSibling ?? null);
+      holder?.insertBefore(artefactIcon(a.def, 56), holder.querySelector(".rar"));
     }
     s.querySelector("[data-next]")?.addEventListener("click", () => {
       this.cb.uiClick();

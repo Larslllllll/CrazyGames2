@@ -50,7 +50,7 @@ const state = () => page.evaluate(() => window.__dwd.state());
 const setInput = (x, y) => page.evaluate(([a, b]) => window.__dwd.setInput(a, b), [x, y]);
 
 if (SHOTS) {
-  const sizes = MOBILE ? [[412, 915], [915, 412]] : [[907, 510], [1216, 684], [1920, 1080], [800, 450], [1080, 607], [450, 800]];
+  const sizes = MOBILE ? [[412, 915], [915, 412]] : [[907, 510], [1216, 684], [1077, 606], [821, 462], [1920, 1080], [1366, 768], [800, 450], [1080, 607], [450, 800]];
   for (const [w, h] of sizes) {
     await page.setViewportSize({ width: w, height: h });
     await page.waitForTimeout(250);

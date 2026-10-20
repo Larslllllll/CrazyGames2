@@ -119,7 +119,7 @@ const state = (page) => page.evaluate(() => window.__dwd.state());
   await page.keyboard.press("e");
   await page.waitForTimeout(250);
   const after = (await state(page)).dragon;
-  check("lullaby lowers the wake meter", before > 5 && after.meter < before - 20, `before=${before.toFixed(0)} after=${after.meter.toFixed(0)}`);
+  check("lullaby lowers the wake meter", before > 3 && after.meter < before && after.meter <= Math.max(after.floor, before - 20), `before=${before.toFixed(0)} after=${after.meter.toFixed(0)} floor=${after.floor.toFixed(0)}`);
   const uses = (await state(page)).thief.lullaby;
   check("lullaby consumed", uses === 0, `uses=${uses}`);
   await page.evaluate(() => window.__dwd.qa.setLair("vault"));

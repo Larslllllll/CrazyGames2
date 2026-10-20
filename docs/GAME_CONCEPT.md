@@ -120,9 +120,10 @@ reveal; an absurd haul; the dragon's eye opening while you stand on its snout; t
 to beat, skins.
 
 **Monetisation (Full Launch only).** Midgame ad: requested when the player taps "Next heist" on the result screen (SDK
-paces it; first one only after 3 min of play). Rewarded: "Sneeze escape — keep your loot" when caught (once per session,
-5 s countdown, 2 s invulnerability after), "Double haul" on the result screen, "Dragon's gift" daily chest. Every
-rewarded button has an equally sized "No thanks" and disappears under adblock / Basic Launch.
+paces it; first one only after 3 min of play). Rewarded: "Keep loot" (the dragon sneezes you out with the bag) when
+caught — once per session with a 5 s countdown — and "Double haul" every third escape. Every rewarded button has an
+equally sized "Continue"/"Next heist" alternative and disappears under adblock / Basic Launch. (A daily ad chest was
+considered and left out: the Daily Heist is the daily hook, and fewer placements keep the loop clean.)
 
 **Controls.** Desktop: WASD / arrows (hold Shift to sneak) or move the mouse (distance = speed); Space / E = Lullaby.
 Mobile: drag anywhere = virtual joystick (drag distance = speed), one ability button. Esc/P pause.
