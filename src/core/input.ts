@@ -32,7 +32,7 @@ export class Input {
   }
   touchDevice = false;
 
-  constructor(private readonly target: HTMLElement) {
+  constructor(target: HTMLElement) {
     window.addEventListener("keydown", (e) => {
       const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       if (!e.repeat) this.pressed.add(k);
