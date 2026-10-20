@@ -421,54 +421,96 @@ export class Renderer {
   private drawAwakeDragon(c: Ctx, d: Dragon, p: LairPalette, t: number): void {
     c.save();
     c.translate(d.x, d.y);
-    shadow(c, -30, 16, 120, 50, 0.3);
+    shadow(c, -60, 22, 170, 70, 0.3);
     c.rotate(d.angle);
-    const flap = 0.75 + 0.25 * Math.sin(t * 14);
+    c.scale(1.3, 1.3);
+    const flap = 0.7 + 0.3 * Math.sin(t * 13);
+    const stride = Math.sin(t * 14) * (d.speed > 40 ? 10 : 0);
     // Tail.
     c.lineCap = "round";
-    c.strokeStyle = p.dragonDark;
-    c.beginPath();
-    c.moveTo(-70, 0);
-    c.quadraticCurveTo(-130, Math.sin(t * 9) * 40, -190, Math.sin(t * 9 + 1) * 30);
-    c.lineWidth = 26;
-    c.stroke();
-    c.strokeStyle = p.dragon;
-    c.lineWidth = 16;
-    c.stroke();
+    for (const [col, w] of [
+      [p.dragonDark, 34],
+      [p.dragon, 22],
+    ] as [string, number][]) {
+      c.strokeStyle = col;
+      c.lineWidth = w;
+      c.beginPath();
+      c.moveTo(-110, 0);
+      c.quadraticCurveTo(-170, Math.sin(t * 8) * 45, -235, Math.sin(t * 8 + 1.2) * 35);
+      c.stroke();
+    }
+    const tx = -235;
+    const ty = Math.sin(t * 8 + 1.2) * 35;
+    poly(c, [tx + 10, ty, tx - 22, ty - 20, tx - 30, ty, tx - 22, ty + 20], p.dragonDark);
+    poly(c, [tx + 6, ty, tx - 18, ty - 13, tx - 24, ty, tx - 18, ty + 13], p.dragon);
+    // Legs (walk cycle).
+    for (const [lx, ly, ph] of [
+      [20, 62, 0],
+      [20, -62, 1],
+      [-95, 70, 1],
+      [-95, -70, 0],
+    ] as [number, number, number][]) {
+      const off = ph === 0 ? stride : -stride;
+      const sy = Math.sign(ly);
+      ellipse(c, lx + off, ly, 24, 15, p.dragon, 0, p.dragonDark, 4);
+      for (let i = -1; i <= 1; i++) poly(c, [lx + off + i * 11 - 5, ly + sy * 10, lx + off + i * 11 + 5, ly + sy * 10, lx + off + i * 11, ly + sy * 24], p.dragonHorn, p.dragonDark, 2);
+    }
     // Wings.
     for (const side of [-1, 1]) {
-      poly(c, [-20, side * 10, -60, side * 150 * flap, -120, side * 120 * flap, -110, side * 20], p.dragonDark, p.wallDark, 3);
-      poly(c, [-30, side * 14, -62, side * 125 * flap, -100, side * 100 * flap, -98, side * 24], p.dragon);
+      poly(c, [-30, side * 18, -60, side * 185 * flap, -150, side * 150 * flap, -150, side * 55, -120, side * 26], p.dragonDark, p.wallDark, 3);
+      poly(c, [-38, side * 24, -64, side * 160 * flap, -140, side * 132 * flap, -140, side * 58], p.dragon);
+      c.strokeStyle = "rgba(0,0,0,0.25)";
+      c.lineWidth = 3;
+      for (let i = 0; i < 3; i++) {
+        c.beginPath();
+        c.moveTo(-40, side * 24);
+        c.lineTo(-70 - i * 30, side * (150 - i * 20) * flap);
+        c.stroke();
+      }
     }
-    // Body, neck, head.
-    ellipse(c, -40, 0, 82, 56, p.dragon, 0, p.dragonDark, 5);
-    ellipse(c, 8, 0, 46, 38, p.dragon, 0, p.dragonDark, 5);
-    ellipse(c, 48, 0, 46, 42, p.dragon, 0, p.dragonDark, 5);
-    roundRect(c, 60, -24, 60, 48, 20, p.dragon, p.dragonDark, 5);
+    // Body, spine, neck, head.
+    ellipse(c, -45, 0, 92, 64, p.dragon, 0, p.dragonDark, 5);
+    for (let x = -120; x <= 10; x += 26) poly(c, [x - 7, -6, x + 7, -6, x, -30], p.dragonHorn, p.dragonDark, 2);
+    ellipse(c, 22, 0, 52, 42, p.dragon, 0, p.dragonDark, 5);
+    ellipse(c, 62, 0, 52, 48, p.dragon, 0, p.dragonDark, 5);
+    roundRect(c, 78, -28, 72, 56, 22, p.dragon, p.dragonDark, 5);
+    ellipse(c, 122, 0, 18, 10, p.dragonBelly);
+    ellipse(c, 134, -9, 5, 3.5, p.dragonDark, 0.4);
+    ellipse(c, 134, 9, 5, 3.5, p.dragonDark, -0.4);
     // Horns.
     for (const side of [-1, 1]) {
-      c.strokeStyle = p.dragonHorn;
-      c.lineWidth = 10;
+      c.strokeStyle = p.dragonDark;
+      c.lineWidth = 16;
       c.beginPath();
-      c.moveTo(30, side * 26);
-      c.quadraticCurveTo(-10, side * 44, -30, side * 30);
+      c.moveTo(44, side * 30);
+      c.quadraticCurveTo(10, side * 54, -20, side * 40);
+      c.stroke();
+      c.strokeStyle = p.dragonHorn;
+      c.lineWidth = 9;
       c.stroke();
     }
     // Mouth / telegraph glow.
-    const open = d.telegraphing ? d.telegraph : d.flame.active ? 1 : 0.15;
-    roundRect(c, 84, -16 * open, 36, 32 * open + 2, 6, "#3b0f0a");
+    const open = d.telegraphing ? d.telegraph : d.flame.active ? 1 : 0.1;
+    roundRect(c, 104, -20 * open, 46, 40 * open + 2, 7, "#3b0f0a");
     if (d.telegraphing) {
-      const g = c.createRadialGradient(118, 0, 4, 118, 0, 50 + d.telegraph * 40);
-      g.addColorStop(0, `rgba(255,220,120,${0.9 * d.telegraph})`);
+      const g = c.createRadialGradient(150, 0, 4, 150, 0, 60 + d.telegraph * 50);
+      g.addColorStop(0, `rgba(255,220,120,${0.95 * d.telegraph})`);
       g.addColorStop(1, "rgba(255,120,30,0)");
       c.fillStyle = g;
-      c.fillRect(60, -90, 160, 180);
+      c.fillRect(80, -110, 200, 220);
     }
-    // Eyes.
+    // Angry eyes.
     for (const side of [-1, 1]) {
-      ellipse(c, 52, side * 22, 11, 14, "#fff6c8", 0, p.dragonDark, 3);
-      ellipse(c, 55, side * 22, 8, 10, "#ff5f2a");
-      ellipse(c, 57, side * 22, 3, 8, "#1b0f0a");
+      ellipse(c, 64, side * 26, 13, 16, "#fff6c8", 0, p.dragonDark, 3);
+      ellipse(c, 68, side * 26, 9, 12, "#ff5f2a");
+      ellipse(c, 70, side * 26, 3.5, 9, "#1b0f0a");
+      c.strokeStyle = p.dragonDark;
+      c.lineWidth = 7;
+      c.lineCap = "round";
+      c.beginPath();
+      c.moveTo(50, side * 40);
+      c.lineTo(80, side * 24);
+      c.stroke();
     }
     c.restore();
   }

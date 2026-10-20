@@ -336,7 +336,10 @@ export class Ui {
   }
 
   closeAll(): void {
-    for (const s of Object.values(this.screens)) s.classList.remove("show");
+    for (const [id, s] of Object.entries(this.screens)) {
+      s.classList.remove("show");
+      if (id !== "ad") s.innerHTML = "";
+    }
     this.current = null;
     clearInterval(this.offerTimer);
   }
@@ -423,6 +426,11 @@ export class Ui {
         }
       }, 1000);
     }
+  }
+
+  /** Stop the keep-loot countdown while an ad is playing. */
+  freezeOffer(): void {
+    clearInterval(this.offerTimer);
   }
 
   /** Re-render the result's reward button after an ad outcome. */

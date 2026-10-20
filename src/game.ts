@@ -433,6 +433,7 @@ export class Game {
   private async rewarded(kind: "double" | "keep"): Promise<void> {
     if (this.adInProgress || !this.pendingResult) return;
     this.adInProgress = true;
+    this.ui.freezeOffer();
     this.ui.showAd(true);
     const outcome = await this.sdk.requestAd("rewarded", { onStarted: () => this.audio.setAdMuted(true) });
     this.audio.setAdMuted(false);
@@ -819,6 +820,41 @@ export class Game {
       sdkLog: () => self.sdk.log.slice(),
       env: () => self.sdk.env,
       dist,
+      // QA mutators: never available on crazygames.com.
+      qa:
+        self.sdk.env === "crazygames"
+          ? null
+          : {
+              grant: (n: number) => {
+                self.profile.gold += n;
+                self.persist();
+              },
+              buy: (id: UpgradeId) => self.buy(id),
+              setLair: (id: string) => {
+                if (!self.profile.unlocked.includes(id)) self.profile.unlocked.push(id);
+                self.profile.lair = id;
+                self.persist();
+                self.newRun(false);
+              },
+              unlockAll: () => {
+                self.profile.unlocked = LAIRS.map((l) => l.id);
+                self.persist();
+              },
+              setSessionPlay: (s: number) => {
+                self.sessionPlay = s;
+                self.runsThisSession = Math.max(self.runsThisSession, 2);
+              },
+              setDoubleCounter: (n: number) => {
+                self.escapesSinceDouble = n;
+              },
+              wake: () => self.run?.dragon.addNoise(1000),
+              reset: () => self.resetProgress(),
+              setLevels: (n: number) => {
+                for (const u of UPGRADES) self.profile.upgrades[u.id] = Math.min(u.maxLevel, n);
+                self.persist();
+                if (self.run?.phase === "ready") self.newRun(self.daily, true);
+              },
+            },
     };
   }
 }

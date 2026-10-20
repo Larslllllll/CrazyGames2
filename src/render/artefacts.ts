@@ -139,9 +139,9 @@ export const artefactIcon = (def: ArtefactDef, px: number, silhouette = false): 
   c.setTransform(dpr, 0, 0, dpr, 0, 0);
   c.translate(px / 2, px / 2);
   if (silhouette) {
-    drawArtefact(c, def.shape, "#2a2f36", px * 0.3);
+    drawArtefact(c, def.shape, "#3d4b58", px * 0.3);
     c.globalCompositeOperation = "source-atop";
-    c.fillStyle = "#2a2f36";
+    c.fillStyle = "#3d4b58";
     c.fillRect(-px, -px, px * 2, px * 2);
     return cv;
   }

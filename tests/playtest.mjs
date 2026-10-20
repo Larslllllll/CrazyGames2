@@ -7,6 +7,9 @@
  */
 import { createRequire } from "node:module";
 import { mkdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const require = createRequire(import.meta.url);
 const { chromium, devices } = require("/opt/node22/lib/node_modules/playwright");
 
@@ -20,7 +23,7 @@ const SHOTS = args.includes("--shots");
 const MOBILE = args.includes("--mobile");
 const URL = opt("url", "http://localhost:4173/");
 const BOT = opt("bot", "greedy"); // greedy | reckless | sneaky
-const OUT = "docs/test-evidence";
+const OUT = resolve(ROOT, "docs/test-evidence");
 mkdirSync(OUT, { recursive: true });
 
 const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--autoplay-policy=no-user-gesture-required"] });

@@ -66,6 +66,8 @@ export class CrazySdk {
   ready = false;
   private sdk: RawSdk | null = null;
   private gameplayActive = false;
+  private lastGameplayStart = -1e9;
+  private startTimer = 0;
   private settingsListeners: Listener[] = [];
   log: string[] = [];
 
@@ -122,15 +124,28 @@ export class CrazySdk {
     this.call("loadingStop", (s) => s.game.loadingStop());
   }
 
+  /** The SDK throttles gameplayStart() to one call per second; defer instead of tripping its console error. */
   gameplayStart(): void {
     if (this.gameplayActive) return;
     this.gameplayActive = true;
+    const wait = 1050 - (performance.now() - this.lastGameplayStart);
+    clearTimeout(this.startTimer);
+    if (wait > 0) {
+      this.startTimer = window.setTimeout(() => {
+        if (!this.gameplayActive) return;
+        this.lastGameplayStart = performance.now();
+        this.call("gameplayStart (deferred)", (s) => s.game.gameplayStart());
+      }, wait);
+      return;
+    }
+    this.lastGameplayStart = performance.now();
     this.call("gameplayStart", (s) => s.game.gameplayStart());
   }
 
   gameplayStop(): void {
     if (!this.gameplayActive) return;
     this.gameplayActive = false;
+    clearTimeout(this.startTimer);
     this.call("gameplayStop", (s) => s.game.gameplayStop());
   }
 

@@ -161,6 +161,7 @@ button:focus-visible {
 .hud {
   position: absolute;
   inset: 0;
+  z-index: 1;
 }
 .hud-top {
   position: absolute;
@@ -341,6 +342,7 @@ button:focus-visible {
 }
 .ability {
   pointer-events: auto;
+  position: relative;
   display: none;
   flex-direction: column;
   align-items: center;
@@ -381,6 +383,7 @@ button:focus-visible {
 }
 .menubar {
   position: absolute;
+  z-index: 2;
   left: 50%;
   bottom: calc(var(--sab) + 12px);
   transform: translateX(-50%);
@@ -422,6 +425,7 @@ button:focus-visible {
 /* ---------- Ready prompt ---------- */
 .ready {
   position: absolute;
+  z-index: 2;
   left: 0;
   right: 0;
   top: 50%;
@@ -470,6 +474,7 @@ button:focus-visible {
 .screen {
   position: absolute;
   inset: 0;
+  z-index: 5;
   display: none;
   align-items: center;
   justify-content: center;
@@ -944,9 +949,14 @@ button:focus-visible {
   margin-top: 6px;
 }
 
+.screen[data-screen="ad"] {
+  z-index: 8;
+}
+
 /* Toasts */
 .toasts {
   position: absolute;
+  z-index: 9;
   top: calc(var(--sat) + 64px);
   left: 50%;
   transform: translateX(-50%);
