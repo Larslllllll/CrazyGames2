@@ -19,6 +19,7 @@ import { LAIRS, lairById, type LairDef } from "./progression/lairs";
 import { checkMilestones, completionPercent, MILESTONES, SKINS, skinById } from "./progression/milestones";
 import { defaultProfile, parseProfile, PROFILE_KEY, type Profile } from "./progression/profile";
 import { bagCapacity, charmMult, lullabyAmount, magnetRadius, speedMult, stepNoiseMult, upgradeById, upgradeCost, UPGRADES, type UpgradeId } from "./progression/upgrades";
+import { renderCover, type CoverVariant } from "./render/cover";
 import { PERF, Renderer } from "./render/renderer";
 import { CrazySdk, type SdkUser } from "./sdk/crazygames";
 import { Juice } from "./systems/juice";
@@ -832,6 +833,7 @@ export class Game {
       },
       sdkLog: () => self.sdk.log.slice(),
       env: () => self.sdk.env,
+      cover: (variant: CoverVariant) => renderCover(variant).toDataURL("image/png"),
       perf: () => ({ ...PERF, particles: self.particles.count, frameMs: self.lastFrameMs, updateMs: self.lastUpdateMs }),
       audio: () => ({
         ctx: !!self.audio.ctx,

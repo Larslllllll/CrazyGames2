@@ -105,6 +105,36 @@ const state = (page) => page.evaluate(() => window.__dwd.state());
   check("page did not scroll", scrolled === 0);
   await page.close();
 }
+// 6. Lullaby lowers the meter; pressure plates ring (vault)
+{
+  const page = await browser.newPage({ viewport: { width: 1216, height: 684 } });
+  await boot(page);
+  await page.evaluate(() => window.__dwd.qa.reset());
+  await page.evaluate(() => window.__dwd.qa.setLevels(1));
+  await page.evaluate(() => window.__dwd.setInput(0.15, -0.7));
+  await page.waitForTimeout(1400);
+  await page.evaluate(() => window.__dwd.setInput(0, 0));
+  await page.waitForTimeout(100);
+  const before = (await state(page)).dragon.meter;
+  await page.keyboard.press("e");
+  await page.waitForTimeout(250);
+  const after = (await state(page)).dragon;
+  check("lullaby lowers the wake meter", before > 5 && after.meter < before - 20, `before=${before.toFixed(0)} after=${after.meter.toFixed(0)}`);
+  const uses = (await state(page)).thief.lullaby;
+  check("lullaby consumed", uses === 0, `uses=${uses}`);
+  await page.evaluate(() => window.__dwd.qa.setLair("vault"));
+  await page.waitForTimeout(300);
+  const s = await state(page);
+  check("vault has pressure plates + 6 artefacts", s.hazards.filter((h) => h.kind === "plate").length >= 5 && s.items.filter((i) => i.kind === "artefact").length === 6, `plates=${s.hazards.length} artefacts=${s.items.filter((i) => i.kind === "artefact").length}`);
+  await page.evaluate(() => window.__dwd.qa.setLair("ice"));
+  await page.waitForTimeout(300);
+  const ice = (await state(page)).hazards.filter((h) => h.kind === "ice").length;
+  await page.evaluate(() => window.__dwd.qa.setLair("volcano"));
+  await page.waitForTimeout(300);
+  const lava = (await state(page)).hazards.filter((h) => h.kind === "lava").length;
+  check("ice and lava lairs generate hazards", ice >= 4 && lava >= 4, `ice=${ice} lava=${lava}`);
+  await page.close();
+}
 await browser.close();
 const fails = results.filter((r) => !r.ok).length;
 console.log(`\n${results.length - fails}/${results.length} platform checks passed`);
