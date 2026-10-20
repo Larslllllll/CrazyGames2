@@ -111,7 +111,7 @@ Fixed-Timestep 120 Hz, Partikel-Pool, Loot-Sprite-Cache (statt 3 Pfadfüllungen 
 gecachter Höhlen-Hintergrund, Vignette/Flash als CSS-Compositor-Layer statt Vollbild-Blits, Hintergrund nur in den
 nicht abgedeckten Streifen, DPR-Cap 2 (1,5 auf schwachen Phones), keine Allokationen in heißen Pfaden, DOM-HUD mit
 Diff-Updates. Ergebnis: 60 fps in allen Playtests; unter 4× CPU-Drosselung mit reiner Software-Rasterung
-(headless, keine GPU) 24–40 fps in der Verfolgung; 72 KB Zip, 37 KB gzip JS, erstes Bild ~0,7 s.
+(headless, keine GPU, parallel laufende Tests) 29–43 fps in der Verfolgung; 72 KB Zip, 37 KB gzip JS, erstes Bild ~0,7 s.
 
 ## 10. Submission Readiness — was ist bereit, was musst du selbst erledigen?
 

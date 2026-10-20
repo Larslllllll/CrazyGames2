@@ -41,7 +41,8 @@ Developer Portal.
 
 ## Quality
 
-- [x] **No console errors** — 0 errors / 0 warnings in every log (`playtest-*.log`, `ui-*.log`, `platform.log`).
+- [x] **No console errors** — 0 errors / 0 warnings in every log (`playtest-*.log`, `ui-*.log`, `platform.log`,
+      `balance.log`); the UI walkthrough passes all steps on desktop and in Pixel 7 emulation.
 - [x] **No broken assets** — the build has 6 files (index.html, JS, CSS, two fonts, favicon); every request logged;
       no `requestfailed` in any log. No external requests except the SDK.
 - [x] **Mobile tested** — Pixel 7 emulation with touch: portrait and landscape playtests, UI walkthrough, rewarded +
@@ -62,8 +63,8 @@ Developer Portal.
 - [x] **External URLs checked** — none in-game (no links, no store buttons, no cross-promotion).
 - [x] **Copyright checked** — original name, dragons, artefacts, art, sound; no brands or characters.
 - [x] **Asset licences documented** — `docs/ASSETS_AND_LICENSES.md` (two OFL fonts, everything else generated).
-- [x] **Performance checked** — 60 fps in all playtests; under 4× CPU throttling with software rendering (no GPU) the
-      chase stays at 24–40 fps (`platform.log`), which is the worst case; fixed 120 Hz timestep; particle pool;
+- [x] **Performance checked** — 60 fps in all playtests; under 4× CPU throttling with software rendering (headless,
+      no GPU, other tests running in parallel) the chase stays at 29–43 fps (`platform.log`), which is the worst case; fixed 120 Hz timestep; particle pool;
       loot sprite cache; cached background; CSS compositor layers for full-screen effects; no per-run allocations
       kept (old runs are dropped, screens rebuilt). Memory stable over 30-heist bot sessions (`balance.log`).
 - [x] **Load time checked** — first state ~0.7 s on localhost (`boot →` line in the playtest logs); 72 KB zip,

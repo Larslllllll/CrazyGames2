@@ -146,8 +146,9 @@ for (const lair of ["ice", "volcano", "vault"]) {
   await page.waitForTimeout(1500);
   const r = (await state()).result;
   console.log(`  ${lair}: ${r?.phase} cause=${r?.cause}`);
-  const next = await page.$("[data-next]");
-  if (next) await next.click();
+  // The result card appears after the slow-motion catch animation; wait for it.
+  const next = await page.waitForSelector("[data-next]", { timeout: 15000 });
+  await next.click();
   await page.waitForFunction(() => window.__dwd.state().phase === "ready", null, { timeout: 30000 });
 }
 
