@@ -258,8 +258,8 @@ export class Ui {
     this.screens.ad.innerHTML = `<div class="ad-note">Ad playing<small>The heist continues right after.</small></div>`;
     this.toasts = el(`<div class="toasts"></div>`);
     root.appendChild(this.toasts);
-    this.fxVignette = el(`<div class="fx vignette"></div>`);
-    this.fxFlash = el(`<div class="fx flash"></div>`);
+    this.fxVignette = el(`<div class="fxlayer vignette"></div>`);
+    this.fxFlash = el(`<div class="fxlayer flash"></div>`);
     root.insertBefore(this.fxFlash, this.hud);
     root.insertBefore(this.fxVignette, this.hud);
   }
